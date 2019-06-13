@@ -1,0 +1,17 @@
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - cd custom-resources
+      - npm install
+
+  build:
+    commands:
+      - npm run test
+      - npm run build
+      - npm run deploy
+
+cache:
+  paths:
+    - custom-resources/node_modules

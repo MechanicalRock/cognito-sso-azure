@@ -1,0 +1,8 @@
+{
+    "Parameters": {
+        "CognitoDomain" : "your-cognito-domain",
+        "CustomResourceStackName": "",
+        "CallbackURLs": "https://yoursite.com/oauth2/idpresponse",
+        "LogoutURLs": "https://yoursite.com/logout"
+    }
+}

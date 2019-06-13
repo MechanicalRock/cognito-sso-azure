@@ -1,0 +1,12 @@
+version: "2"
+services:
+    serverless:
+        build:
+            context: .
+        environment:
+            - AWS_PROFILE
+            - IAM_EXECUTION_ROLE=
+            - IAM_CFN_ROLE=
+        volumes:
+            - ~/.aws:/root/.aws
+            - ./:/serverless

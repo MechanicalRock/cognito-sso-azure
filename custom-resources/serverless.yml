@@ -1,0 +1,53 @@
+service:
+  name: serverless-cognito-custom-resources
+# ls-er-cognito-custom-resources
+
+# Add the serverless-webpack plugin
+plugins:
+  - serverless-webpack
+
+provider:
+  name: aws
+  runtime: nodejs8.10
+  memorySize: 256
+  timeout: 300
+  role: ${env:IAM_EXECUTION_ROLE}
+  versionFunctions: false
+  stage: ${opt:stage, 'prod'}
+  stackName: ${env:STACK_NAME}
+functions:
+  CustomUserPoolDomain:
+    handler: src/manage-cognito-userpool-domain.handler
+  CustomUserPoolClientSettings:
+    handler: src/manage-cognito-userpool-client-settings.handler
+  CustomUserPoolIdentProv:
+    handler: src/manage-cognito-userpool-identity-provider.handler
+  CustomUserPoolResourceServer:
+    handler: src/manage-cognito-userpool-resource-server.handler
+resources:
+  Outputs:
+    CustomUserPoolDomainArn:
+      Description: The ARN for the Cognito User Pool Domain custom resource
+      Value:
+        Fn::GetAtt: [CustomUserPoolDomainLambdaFunction, Arn]
+      Export:
+        Name: ${env:STACK_NAME}CustomUserPoolDomainArn
+    CustomUserPoolClientSettingsArn:
+      Description: The ARN for the Cognito User Pool Client Settings custom resource
+      Value:
+        Fn::GetAtt: [CustomUserPoolClientSettingsLambdaFunction, Arn]
+      Export:
+        Name: ${env:STACK_NAME}CustomUserPoolClientSettingsArn
+    CustomUserPoolIdentProvArn:
+      Description: The ARN for the Cognito User Pool Identity Provider custom resource
+      Value:
+        Fn::GetAtt: [CustomUserPoolIdentProvLambdaFunction, Arn]
+      Export:
+        Name: ${env:STACK_NAME}CustomUserPoolIdentProvArn      
+    CustomUserPoolResourceServer:
+      Description: The ARN for the Cognito User Pool Resource Server custom resource
+      Value:
+        Fn::GetAtt: [CustomUserPoolResourceServerLambdaFunction, Arn]
+      Export:
+        Name: ${env:STACK_NAME}CustomUserPoolResourceServerArn
+

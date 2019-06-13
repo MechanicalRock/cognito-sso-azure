@@ -1,0 +1,111 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Parameters:
+  CognitoDomain:
+    Type: String
+    Description: subdomain portion of the cognito domain
+  CustomResourceStackName:
+    Type: String
+    Description: stack name where custom resource lambda arns are exported from
+  CallbackURLs:
+    Type: CommaDelimitedList
+    Description: A list of callback URLs (e.g. for each environment) for Cognito user pool settings
+  LogoutURLs:
+    Type: CommaDelimitedList
+    Description: A list of Logout URLs (e.g. for each environment) for Cognito user pool settings
+Resources:  
+  ClientUserPool:
+    Type: "AWS::Cognito::UserPool"
+    Properties:
+      UserPoolName: !Sub "${CognitoDomain}-client-user-pool"
+      Schema:
+        - Name: name
+          AttributeDataType: String
+          Mutable: true
+          Required: true
+        - Name: email
+          AttributeDataType: String
+          Mutable: true
+          Required: true
+      UsernameAttributes:
+        - email
+
+  ClientUserPoolClient:
+    Type: "AWS::Cognito::UserPoolClient"
+    Properties:
+      ClientName: !Sub "${CognitoDomain}-client-user-pool-client"
+      GenerateSecret: true
+      UserPoolId: !Ref ClientUserPool
+
+  UserPoolClientSettings:
+    Type: 'Custom::CognitoUserPoolClientSettings'
+    DependsOn:
+      UserPoolIdentityProvider
+    Properties:
+      ServiceToken: 
+        Fn::ImportValue: !Sub "${CustomResourceStackName}CustomUserPoolClientSettingsArn"
+      UserPoolId: !Ref ClientUserPool
+      UserPoolClientId: !Ref ClientUserPoolClient
+      SupportedIdentityProviders:
+        - AzureSSO
+      CallbackURLs: !Ref CallbackURLs
+      LogoutURLs: !Ref LogoutURLs
+      AllowedOAuthFlowsUserPoolClient: true
+      AllowedOAuthFlows:
+        - code
+        - implicit
+      AllowedOAuthScopes:
+        - openid
+        - email
+
+  UserPoolDomain:
+    Type: 'Custom::CognitoUserPoolDomain'
+    Properties:
+      ServiceToken: 
+        Fn::ImportValue: !Sub "${CustomResourceStackName}CustomUserPoolDomainArn"
+      UserPoolId: !Ref ClientUserPool
+      Domain: !Ref CognitoDomain
+      RandomParam: 1
+
+  UserPoolResourceServer:
+    Type: 'Custom::CognitoUserPoolResourceServer'
+    Properties:
+      ServiceToken: 
+        Fn::ImportValue: !Sub "${CustomResourceStackName}CustomUserPoolResourceServerArn"
+      ResourceServer:
+        UserPoolId:
+            !Ref ClientUserPool
+        Identifier: !Sub "https://${CognitoDomain}.yoursite.com"
+        Name: !Ref CognitoDomain
+        Scopes:
+          - ScopeName: customscope
+            ScopeDescription: your own custom scopes
+
+  UserPoolIdentityProvider:
+    Type: 'Custom::CognitoUserPoolIdentityProvider'
+    Properties:
+      ServiceToken:
+        Fn::ImportValue: !Sub "${CustomResourceStackName}CustomUserPoolIdentProvArn"
+      MetadataFile:
+        !Sub "${CognitoDomain}.xml"
+      ProviderName:
+        AzureSSO
+      UserPoolId:
+        !Ref ClientUserPool
+      AttributeMapping:
+        name: http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name
+        email: http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress
+
+Outputs:
+  UserPoolDomain:
+    Value: !Ref CognitoDomain
+    Export:
+      Name: !Sub "${AWS::StackName}UserPoolDomain"
+  UserPoolArn:
+    Value: !GetAtt ClientUserPool.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}UserPoolArn"
+  UserPoolClientId:
+    Value: !Ref ClientUserPoolClient
+    Export:
+      Name: !Sub "${AWS::StackName}UserPoolClientId"
+    
