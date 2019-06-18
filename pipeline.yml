@@ -307,24 +307,24 @@ Resources:
               InputArtifacts:
                 - Name: CodeCommitSource
               RunOrder: 10
-            # - Name: DeployCognitoSso
-            #   ActionTypeId:
-            #     Category: Deploy
-            #     Owner: AWS
-            #     Provider: CloudFormation
-            #     Version: '1'
-            #   Configuration:
-            #     ActionMode: REPLACE_ON_FAILURE
-            #     Capabilities: CAPABILITY_NAMED_IAM
-            #     RoleArn: !GetAtt [CloudFormationDeployActionRole, Arn]
-            #     StackName: !Sub "cognito-${NamingKebab}"
-            #     TemplateConfiguration: 'CodeCommitSource::cognito.json'
-            #     TemplatePath: 'CodeCommitSource::cognito.yml'
-            #     ParameterOverrides: !Sub |
-            #       { "CustomResourceArn" : "${StageDeployCustomResourcesStackName}CustomResourceArn"}
-            #   InputArtifacts:
-            #     - Name: CodeCommitSource
-            #   RunOrder: 20
+            - Name: DeployCognitoSso
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Provider: CloudFormation
+                Version: '1'
+              Configuration:
+                ActionMode: REPLACE_ON_FAILURE
+                Capabilities: CAPABILITY_NAMED_IAM
+                RoleArn: !GetAtt [CloudFormationDeployActionRole, Arn]
+                StackName: !Sub "cognito-${NamingKebab}"
+                TemplateConfiguration: 'CodeCommitSource::cognito.json'
+                TemplatePath: 'CodeCommitSource::cognito.yml'
+                ParameterOverrides: !Sub |
+                  { "CustomResourceStackName" : "${NamingKebab}-custom-resources"}
+              InputArtifacts:
+                - Name: CodeCommitSource
+              RunOrder: 20
      
 Outputs:
   CodeCommitRepositoryArn:
