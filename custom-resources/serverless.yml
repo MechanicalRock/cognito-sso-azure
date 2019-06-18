@@ -1,5 +1,5 @@
 service:
-  name: serverless-cognito-custom-resources
+  name: sls-cognito-custom-resources
 # ls-er-cognito-custom-resources
 
 # Add the serverless-webpack plugin
