@@ -240,6 +240,9 @@ Resources:
           - Name: STACK_NAME
             Type: PLAINTEXT
             Value: !Sub "${NamingKebab}-custom-resources"
+          - Name: REGION
+            Type: PLAINTEXT
+            Value: !Sub "${AWS::Region}"
       ServiceRole: !Ref CustomResourcesDeployRole
       Source:
         Type: CODEPIPELINE
@@ -304,7 +307,7 @@ Resources:
               InputArtifacts:
                 - Name: CodeCommitSource
               RunOrder: 10
-            # - Name: DeployWiretapAnalyticsERDev
+            # - Name: DeployCognitoSso
             #   ActionTypeId:
             #     Category: Deploy
             #     Owner: AWS
@@ -314,9 +317,9 @@ Resources:
             #     ActionMode: REPLACE_ON_FAILURE
             #     Capabilities: CAPABILITY_NAMED_IAM
             #     RoleArn: !GetAtt [CloudFormationDeployActionRole, Arn]
-            #     StackName: !Sub "${StageAnalyticsStackName}-er-dev"
-            #     TemplateConfiguration: 'CodeCommitSource::pipeline/analytics-er-dev.json'
-            #     TemplatePath: 'CodeCommitSource::pipeline/analytics.yml'
+            #     StackName: !Sub "cognito-${NamingKebab}"
+            #     TemplateConfiguration: 'CodeCommitSource::cognito.json'
+            #     TemplatePath: 'CodeCommitSource::cognito.yml'
             #     ParameterOverrides: !Sub |
             #       { "CustomResourceArn" : "${StageDeployCustomResourcesStackName}CustomResourceArn"}
             #   InputArtifacts:

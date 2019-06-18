@@ -8,6 +8,7 @@ plugins:
 
 provider:
   name: aws
+  region: ${env:REGION}
   runtime: nodejs8.10
   memorySize: 256
   timeout: 300
