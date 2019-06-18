@@ -1,0 +1,366 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  NamingPascal:
+    Type: String
+    Description: |
+      Describes the capability
+      This parameter will be used where hypens/underscores are not allowed, e.g. role names. Examples;
+        - AzureAd
+        - KinesisFirehoseDemo      
+  NamingKebab:
+    Type: String
+    Description: |
+      Describes the capability
+      This parameter will be used where lower case is required, e.g. bucket names
+
+Resources:
+  CodeBuildRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - codebuild.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Policies:
+        - PolicyName: buildTestInfraRolePolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Action:
+                  - logs:*
+                  - s3:*
+                  - lambda:*
+                  - apigateway:*
+                  - ec2:*
+                  - elasticloadbalancing:*
+                  - cloudformation:*
+                  - iam:*
+                  - dynamodb:*
+                  - events:*
+                Effect: Allow
+                Resource: "*"
+
+  CustomResourcesProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Artifacts:
+        Type: CODEPIPELINE
+      Cache:
+        Type: LOCAL
+        Modes:
+          - LOCAL_CUSTOM_CACHE
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/nodejs:10.14.1
+        ImagePullCredentialsType: CODEBUILD # codebuild curated image
+        Type: LINUX_CONTAINER
+      ServiceRole: !Ref CodeBuildRole
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: pipeline/dev-build.yml
+
+  CodeCommitRepository:
+    DeletionPolicy: Retain
+    Type: 'AWS::CodeCommit::Repository'
+    Properties:
+      RepositoryName: !Sub "coderepo-${NamingKebab}"
+      RepositoryDescription: !Sub "${NamingKebab} CodeCommit Repository"
+
+  CodePipelineBucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: !Sub "bucket-codepipeline-${NamingKebab}"
+
+  CloudFormationDeployActionRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Action: ['sts:AssumeRole']
+          Effect: Allow
+          Principal:
+            Service: [cloudformation.amazonaws.com]
+        Version: '2012-10-17'
+      Path: /
+      Policies:
+        - PolicyName: CloudFormationRole
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Action:
+                  - 'codebuild:*'
+                  - 'codecommit:*'
+                  - 'cloudformation:*'
+                  - 'codepipeline:*'
+                  - 'cloudwatch:*'
+                  - 'iam:*'
+                  - 's3:*'
+                  - 'glue:*'
+                  - 'lambda:*'
+                  - 'ssm:*'
+                Effect: Allow
+                Resource: '*'
+      RoleName: !Sub "role-cfndeploy-${NamingPascal}"
+
+  CodePipelineRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - codepipeline.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Path: /
+      Policies:
+        - PolicyName: codepipeline-service
+          PolicyDocument:
+            Statement:
+              - Action:
+                  - codecommit:GetBranch
+                  - codecommit:GetCommit
+                  - codecommit:UploadArchive
+                  - codecommit:GetUploadArchiveStatus
+                  - codecommit:CancelUploadArchive
+
+                  - codebuild:BatchGetBuilds
+                  - codebuild:StartBuild
+
+                  - s3:GetObject
+                  - s3:GetObjectVersion
+                  - s3:GetBucketVersioning
+                  - s3:PutObject
+
+                  - cloudformation:GetTemplate
+                  - cloudformation:DescribeStackResource
+                  - cloudformation:DescribeStackResources
+                  - cloudformation:DescribeStackEvents
+                  - cloudformation:DescribeStacks
+                  - cloudformation:UpdateStack
+                  - cloudformation:CreateStack
+                  - cloudformation:DeleteStack
+
+                  - 'iam:PassRole'
+                Resource: '*'
+                Effect: Allow
+            Version: 2012-10-17
+      RoleName: !Sub "role-pipeline-${NamingPascal}"
+
+  CustomResourcesDeployRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - codebuild.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Policies:
+        - PolicyName: CustomResourcesDeployPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Action:
+                  - lambda:*
+                  - cloudwatch:*
+                  - events:*
+                  - logs:*
+                  - cloudformation:*
+                  - s3:*
+                  - iam:*
+                Effect: Allow
+                Resource: '*'
+      RoleName: !Sub "role-slsdeploy-${NamingPascal}"
+
+  CustomResourcesExecutionRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action: 'sts:AssumeRole'
+            Principal:
+              Service: lambda.amazonaws.com
+      Policies:
+        - PolicyName: WriteCloudWatchLogs
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource: 'arn:aws:logs:*:*:*'
+        - PolicyName: CustomGlueCrawlerUpdatePolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'glue:*Crawler*'
+                  - 'iam:PassRole'
+                Resource: '*'
+      RoleName: !Sub "role-slsexec-${NamingPascal}"
+
+
+  CustomResourcesBuild:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Artifacts:
+        Type: CODEPIPELINE
+      Cache:
+        Type: LOCAL
+        Modes:
+          - LOCAL_CUSTOM_CACHE
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/nodejs:10.14.1
+        ImagePullCredentialsType: CODEBUILD # codebuild curated image
+        Type: LINUX_CONTAINER
+        EnvironmentVariables:
+          - Name: IAM_CFN_ROLE
+            Type: PLAINTEXT
+            Value: !GetAtt CustomResourcesDeployRole.Arn
+          - Name: IAM_EXECUTION_ROLE
+            Type: PLAINTEXT
+            Value: !GetAtt CustomResourcesExecutionRole.Arn
+          - Name: STACK_NAME
+            Type: PLAINTEXT
+            Value: !Sub "${NamingKebab}-custom-resources"
+      ServiceRole: !Ref CustomResourcesDeployRole
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: buildspec.yml
+
+
+  CodePipeline:
+    Type: 'AWS::CodePipeline::Pipeline'  
+    Properties:
+      ArtifactStore:
+        Type: S3
+        Location: !Ref CodePipelineBucket
+      Name: !Sub "pipeline-${NamingKebab}"
+      RestartExecutionOnUpdate: true
+      RoleArn: !Join ['', ['arn:aws:iam::',!Ref 'AWS::AccountId',':role/',!Ref CodePipelineRole]]
+      Stages:
+        - Name: Source
+          Actions:
+            - InputArtifacts: []
+              Name: Source
+              ActionTypeId:
+                Category: Source
+                Owner: AWS
+                Version: '1'
+                Provider: CodeCommit
+              OutputArtifacts:
+                - Name: CodeCommitSource
+              Configuration:
+                BranchName: 'master'
+                RepositoryName: !GetAtt CodeCommitRepository.Name
+              RunOrder: 1
+
+        - Name: 'AdministerPipeline'
+          Actions:
+            - Name: 'AdministerPipeline'
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Provider: CloudFormation
+                Version: '1'
+              Configuration:
+                ActionMode: REPLACE_ON_FAILURE
+                Capabilities: CAPABILITY_NAMED_IAM
+                RoleArn: !GetAtt [CloudFormationDeployActionRole, Arn]
+                StackName: !Sub "pipeline-${NamingKebab}"
+                TemplateConfiguration: 'CodeCommitSource::pipeline.json'
+                TemplatePath: 'CodeCommitSource::pipeline.yml'
+              InputArtifacts:
+                - Name: CodeCommitSource
+              RunOrder: 1
+
+        - Name: 'Deploy'
+          Actions:
+            - Name: 'CustomCognitoResources'
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: '1'
+              Configuration:
+                ProjectName: !Ref CustomResourcesBuild
+              InputArtifacts:
+                - Name: CodeCommitSource
+              RunOrder: 10
+            # - Name: DeployWiretapAnalyticsERDev
+            #   ActionTypeId:
+            #     Category: Deploy
+            #     Owner: AWS
+            #     Provider: CloudFormation
+            #     Version: '1'
+            #   Configuration:
+            #     ActionMode: REPLACE_ON_FAILURE
+            #     Capabilities: CAPABILITY_NAMED_IAM
+            #     RoleArn: !GetAtt [CloudFormationDeployActionRole, Arn]
+            #     StackName: !Sub "${StageAnalyticsStackName}-er-dev"
+            #     TemplateConfiguration: 'CodeCommitSource::pipeline/analytics-er-dev.json'
+            #     TemplatePath: 'CodeCommitSource::pipeline/analytics.yml'
+            #     ParameterOverrides: !Sub |
+            #       { "CustomResourceArn" : "${StageDeployCustomResourcesStackName}CustomResourceArn"}
+            #   InputArtifacts:
+            #     - Name: CodeCommitSource
+            #   RunOrder: 20
+     
+Outputs:
+  CodeCommitRepositoryArn:
+    Description: CodeCommit Arn
+    Export:
+      Name: !Join ['', [!Ref 'AWS::StackName', 'CodeCommitRepositoryArn']]
+    Value: !GetAtt CodeCommitRepository.Arn
+  CodeCommitRepositoryCloneUrlHttp:
+    Description: CodeCommit CloneUrlHttp
+    Export:
+      Name: !Join ['', [!Ref 'AWS::StackName', 'CodeCommitRepositoryCloneUrlHttp']]
+    Value: !GetAtt CodeCommitRepository.CloneUrlHttp
+  CodePipelineBucketArn:
+    Description: CodePipeline S3 Bucket Arn
+    Export:
+      Name: !Join ['', [!Ref 'AWS::StackName', 'CodePipelineBucketArn']]
+    Value: !GetAtt CodePipelineBucket.Arn
+  CodePipelineBucketDomainName:
+    Description: CodePipeline S3 Bucket DomainName
+    Export:
+      Name: !Join ['', [!Ref 'AWS::StackName', 'CodePipelineBucketDomainName']]
+    Value: !GetAtt CodePipelineBucket.DomainName
+  CodePipelineBucketWebsiteURL:
+    Description: CodePipeline S3 Bucket WebsiteURL
+    Export:
+      Name: !Join ['', [!Ref 'AWS::StackName', 'CodePipelineBucketWebsiteURL']]
+    Value: !GetAtt CodePipelineBucket.WebsiteURL
+  CloudFormationDeployActionRoleArn:
+    Description: CloudFormationDeployActionRole Arn
+    Export:
+      Name: !Join ['', [!Ref 'AWS::StackName', 'CloudFormationDeployActionRoleArn']]
+    Value: !GetAtt CloudFormationDeployActionRole.Arn
+  CodePipelineRoleArn:
+    Description: CodePipelineRole Arn
+    Export:
+      Name: !Join ['', [!Ref 'AWS::StackName', 'CodePipelineRoleArn']]
+    Value: !GetAtt CodePipelineRole.Arn
+  CodePipelineName:
+    Description: CodePipeline Name
+    Export:
+      Name: !Join ['', [!Ref 'AWS::StackName', 'CodePipelineName']]
+    Value: !Ref CodePipeline
