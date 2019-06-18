@@ -98,12 +98,10 @@ Resources:
                   - 'codecommit:*'
                   - 'cloudformation:*'
                   - 'codepipeline:*'
-                  - 'cloudwatch:*'
                   - 'iam:*'
                   - 's3:*'
-                  - 'glue:*'
                   - 'lambda:*'
-                  - 'ssm:*'
+                  - 'cognito-idp:*'
                 Effect: Allow
                 Resource: '*'
       RoleName: !Sub "role-cfndeploy-${NamingPascal}"
