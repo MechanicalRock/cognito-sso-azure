@@ -1,0 +1,6 @@
+{
+    "Parameters": {
+        "NamingPascal": "AzureAdCognito",
+        "NamingKebab": "azure-ad-cognito"
+    }
+}
