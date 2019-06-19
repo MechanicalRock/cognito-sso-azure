@@ -202,14 +202,13 @@ Resources:
                   - 'logs:CreateLogStream'
                   - 'logs:PutLogEvents'
                 Resource: 'arn:aws:logs:*:*:*'
-        - PolicyName: CustomGlueCrawlerUpdatePolicy
+        - PolicyName: CustomResourceExecutionPolicy
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
               - Effect: Allow
                 Action:
-                  - 'glue:*Crawler*'
-                  - 'iam:PassRole'
+                  - 'cognito-idp'
                 Resource: '*'
       RoleName: !Sub "role-slsexec-${NamingPascal}"
 
