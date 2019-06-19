@@ -208,7 +208,7 @@ Resources:
             Statement:
               - Effect: Allow
                 Action:
-                  - 'cognito-idp'
+                  - 'cognito-idp:*'
                 Resource: '*'
       RoleName: !Sub "role-slsexec-${NamingPascal}"
 
