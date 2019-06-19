@@ -3,6 +3,7 @@
         "CognitoDomain" : "your-cognito-domain",
         "CustomResourceStackName": "",
         "CallbackURLs": "https://yoursite.com/oauth2/idpresponse",
-        "LogoutURLs": "https://yoursite.com/logout"
+        "LogoutURLs": "https://yoursite.com/logout",
+        "ManifestPresent": "false"
     }
 }

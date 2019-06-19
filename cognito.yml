@@ -12,6 +12,14 @@ Parameters:
   LogoutURLs:
     Type: CommaDelimitedList
     Description: A list of Logout URLs (e.g. for each environment) for Cognito user pool settings
+  ManifestPresent:
+    Type: String
+    Description: Boolean value of whether manifest from Azure has been received and deployed
+    Default: "true"
+Conditions:
+  HaveManifest: 
+    Fn::Equals: ["true", !Ref ManifestPresent]
+
 Resources:  
   ClientUserPool:
     Type: "AWS::Cognito::UserPool"
@@ -38,15 +46,18 @@ Resources:
 
   UserPoolClientSettings:
     Type: 'Custom::CognitoUserPoolClientSettings'
-    DependsOn:
+    DependsOn: 
       UserPoolIdentityProvider
     Properties:
       ServiceToken: 
         Fn::ImportValue: !Sub "${CustomResourceStackName}CustomUserPoolClientSettingsArn"
       UserPoolId: !Ref ClientUserPool
       UserPoolClientId: !Ref ClientUserPoolClient
-      SupportedIdentityProviders:
-        - AzureSSO
+      SupportedIdentityProviders: 
+        !If:
+          - HaveManifest
+          - "AzureSSO"
+          - ""
       CallbackURLs: !Ref CallbackURLs
       LogoutURLs: !Ref LogoutURLs
       AllowedOAuthFlowsUserPoolClient: true
@@ -82,6 +93,7 @@ Resources:
 
   UserPoolIdentityProvider:
     Type: 'Custom::CognitoUserPoolIdentityProvider'
+    Condition: HaveManifest
     Properties:
       ServiceToken:
         Fn::ImportValue: !Sub "${CustomResourceStackName}CustomUserPoolIdentProvArn"
