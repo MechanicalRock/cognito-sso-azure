@@ -19,6 +19,7 @@ Parameters:
   LoadBalancerListenerArn:
     Type: String
     Description: ARN of your ALB listener (must be HTTPS protocol to authenticate with Cognito in load balancer)    
+    Default: ""
 Conditions:
   HaveManifest: 
     Fn::Equals: ["true", !Ref ManifestPresent]
