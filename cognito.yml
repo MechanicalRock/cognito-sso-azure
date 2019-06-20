@@ -16,9 +16,15 @@ Parameters:
     Type: String
     Description: Boolean value of whether manifest from Azure has been received and deployed
     Default: "true"
+  LoadBalancerListenerArn:
+    Type: String
+    Description: ARN of your ALB listener (must be HTTPS protocol to authenticate with Cognito in load balancer)    
 Conditions:
   HaveManifest: 
     Fn::Equals: ["true", !Ref ManifestPresent]
+  HaveLoadBalancer:
+    Fn::Not: 
+      - Fn::Equals: ["", !Ref LoadBalancerListenerArn]
 
 Resources:  
   ClientUserPool:
@@ -110,6 +116,33 @@ Resources:
         email: http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress
         groups: http://schemas.microsoft.com/ws/2008/06/identity/claims/groups
 
+
+  LoadBalancerListenerRuleCognito:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Condition: HaveLoadBalancer
+    Properties:
+      ListenerArn:
+        Fn::ImportValue: !Ref LoadBalancerListenerArn
+      Conditions:
+        - Field: path-pattern
+          Values:
+            - "*"
+      Priority: 120
+      Actions:
+        - AuthenticateCognitoConfig:
+            OnUnauthenticatedRequest: authenticate
+            SessionCookieName: AWSELBAuthSessionCookie
+            UserPoolArn: !GetAtt ClientUserPool.Arn
+            UserPoolClientId: !Ref ClientUserPoolClient
+            UserPoolDomain: !Ref CognitoDomain
+          Type: authenticate-cognito
+          Order: 10
+        - Type: fixed-response 
+          FixedResponseConfig: 
+            ContentType: text/plain 
+            MessageBody: "Congratulations! Authenticated." 
+            StatusCode: "200" 
+          Order: 20
 Outputs:
   UserPoolDomain:
     Value: !Ref CognitoDomain
