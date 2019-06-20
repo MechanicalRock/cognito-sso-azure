@@ -50,6 +50,14 @@ cognito.json | CallbackURLs | comma separated list of callback URLs - see note a
 cognito.json | LogoutURLs | comma separated list of logout URLs, if you have configured this feature
 cognito.json | ManifestPresent | set to true once you have added your metadata xml file to `custom-resources/azure/` folder. If this is false (i.e. if you don't have metadata XML yet) then Cloudformation won't deploy the Cognito User Pool Identity Provider
 
+
+#### Callback URLs
+Callback URLs should point to the loadbalancer, or a DNS name that points to the load balancer. In addition, they should use the suffix /oauth2/idpresponse. For example, if your loadbalancer is
+>     `uuid-uuid.elb.us-east-1.amazonaws.com`
+then the corresponding callback URL would be
+> `https://uuid-uuid.elb.us-east-1.amazonaws.com/oauth2/idpresponse`
+
+
 ### Deploy the stack
 
 Once you have configured your parameter files, you can deploy the pipeling as follows:
