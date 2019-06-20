@@ -59,7 +59,7 @@ Resources:
         - Fn::If:
             - HaveManifest
             - !Ref UserPoolIdentityProvider
-            - AWS::NoValue
+            - !Ref AWS::NoValue
       CallbackURLs: !Ref CallbackURLs
       LogoutURLs: !Ref LogoutURLs
       AllowedOAuthFlowsUserPoolClient: true
