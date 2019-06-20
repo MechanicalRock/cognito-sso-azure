@@ -58,10 +58,5 @@ $AWSCFN describe-stacks --stack-name ${STACK_NAME} --output table --query "Stack
 
 export CODECOMMIT_REPO=`$AWSCFN describe-stacks --stack-name ${STACK_NAME} --output text --query "Stacks[0].Outputs[?OutputKey=='CodeCommitRepositoryCloneUrlHttp'].OutputValue"`
 
-git config --local credential.$CODECOMMIT_REPO.helper='!aws codecommit credential-helper $@'
-git config --local credential.UseHttpPath true
-git remote add myrepo $CODECOMMIT_REPO
-git add -A && git commit -m "Initial commit"
-git push myrepo master -f
-
+echo "New codecommit repository is $CODECOMMIT_REPO"
 rm -f $PARAMFILE
