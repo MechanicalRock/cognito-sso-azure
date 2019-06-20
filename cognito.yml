@@ -35,6 +35,7 @@ Resources:
           Mutable: true
           Required: true
         - Name: groups
+          AttributeDataType: String
           Mutable: true
           Required: false
       UsernameAttributes:
