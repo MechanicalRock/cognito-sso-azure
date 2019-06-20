@@ -56,10 +56,10 @@ Resources:
       UserPoolId: !Ref ClientUserPool
       UserPoolClientId: !Ref ClientUserPoolClient
       SupportedIdentityProviders: 
-        Fn::If:
-          - HaveManifest
-          - !Ref UserPoolIdentityProvider
-          - ""
+        - Fn::If:
+            - HaveManifest
+            - !Ref UserPoolIdentityProvider
+            - AWS::NoValue
       CallbackURLs: !Ref CallbackURLs
       LogoutURLs: !Ref LogoutURLs
       AllowedOAuthFlowsUserPoolClient: true
