@@ -172,10 +172,10 @@ describe('default idempotent custom resource handler - delete to update', () => 
 
         expect(isPresent).toHaveBeenCalledTimes(1);
         expect(mockCfnResponse).toHaveBeenCalledTimes(1);
-        expect(mockCfnResponse).toHaveBeenCalledWith( expect.anything() , expect.anything(), CLOUDFORMATION_FAILED, 'Error: oh no');
+        expect(mockCfnResponse).toHaveBeenCalledWith( expect.anything() , expect.anything(), CLOUDFORMATION_SUCCESS);
         expect(doDelete).toBeCalledTimes(1)
         const create = (customResource.create as jest.Mock);
-        expect(create).toBeCalledTimes(0);
+        expect(create).toBeCalledTimes(1);
         done();
     });
 

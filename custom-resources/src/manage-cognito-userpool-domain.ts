@@ -8,7 +8,8 @@ export const handler: APIGatewayProxyHandler = async (event: any, _context)  => 
     let result = await new IdempotentCustomResourceHandle( {
         customResource: new CustomCognitoUserPoolDomain(),
         deleteToUpdate: true,
-        failIfUnexpectedPresence: false
+        failIfUnexpectedPresence: false,
+        ignoreDeleteFailure: true
     }).processCustomResource(event, _context);
     return result;
 }

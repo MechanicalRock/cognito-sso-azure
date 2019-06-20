@@ -54,7 +54,7 @@ Resources:
       UserPoolId: !Ref ClientUserPool
       UserPoolClientId: !Ref ClientUserPoolClient
       SupportedIdentityProviders: 
-        !If:
+        Fn::If:
           - HaveManifest
           - "AzureSSO"
           - ""

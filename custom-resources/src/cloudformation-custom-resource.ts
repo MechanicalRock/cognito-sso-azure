@@ -11,6 +11,7 @@ export type IdempotentCustomResourceHandleConfig = {
     customResource: CloudformationCustomResource;
     failIfUnexpectedPresence: boolean;
     deleteToUpdate: boolean;
+    ignoreDeleteFailure?: boolean;
 }
 export class IdempotentCustomResourceHandle {
     config: IdempotentCustomResourceHandleConfig;
@@ -58,10 +59,12 @@ export class IdempotentCustomResourceHandle {
                         try {
                             await this.config.customResource.delete(event);
                         } catch (e) {
-                            await sendCloudformationResponse(event, context, CLOUDFORMATION_FAILED, e.toString());
-                            break;
+                            if ( this.config.failIfUnexpectedPresence === true ) {
+                                await sendCloudformationResponse(event, context, CLOUDFORMATION_FAILED, e.toString());
+                                break;
+                            }
                         }
-                    } else if ( this.config.failIfUnexpectedPresence ) {
+                    } else if ( this.config.failIfUnexpectedPresence === true ) {
                         await sendCloudformationResponse(event, context, CLOUDFORMATION_FAILED);
                         break;
                     }
@@ -90,7 +93,8 @@ export class IdempotentCustomResourceHandle {
                         await this.config.customResource.delete(event);
                         await sendCloudformationResponse(event, context, CLOUDFORMATION_SUCCESS);
                     } catch (e) {
-                        await sendCloudformationResponse(event, context, CLOUDFORMATION_FAILED, e.toString());
+                        let status = this.config.ignoreDeleteFailure === true ? CLOUDFORMATION_SUCCESS : CLOUDFORMATION_FAILED;
+                        await sendCloudformationResponse(event, context, status, e.toString());
                     }
                 } else {
                     console.log('nothing to delete');
