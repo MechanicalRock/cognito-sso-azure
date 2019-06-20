@@ -6,6 +6,7 @@ Parameters:
   CustomResourceStackName:
     Type: String
     Description: stack name where custom resource lambda arns are exported from
+    Default: ""
   CallbackURLs:
     Type: CommaDelimitedList
     Description: A list of callback URLs (e.g. for each environment) for Cognito user pool settings
