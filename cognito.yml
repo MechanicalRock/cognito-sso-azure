@@ -34,6 +34,9 @@ Resources:
           AttributeDataType: String
           Mutable: true
           Required: true
+        - Name: groups
+          Mutable: true
+          Required: false
       UsernameAttributes:
         - email
 
@@ -45,9 +48,7 @@ Resources:
       UserPoolId: !Ref ClientUserPool
 
   UserPoolClientSettings:
-    Type: 'Custom::CognitoUserPoolClientSettings'
-    DependsOn: 
-      UserPoolIdentityProvider
+    Type: 'Custom::CognitoUserPoolClientSettings' 
     Properties:
       ServiceToken: 
         Fn::ImportValue: !Sub "${CustomResourceStackName}CustomUserPoolClientSettingsArn"
@@ -56,7 +57,7 @@ Resources:
       SupportedIdentityProviders: 
         Fn::If:
           - HaveManifest
-          - "AzureSSO"
+          - !Ref UserPoolIdentityProvider
           - ""
       CallbackURLs: !Ref CallbackURLs
       LogoutURLs: !Ref LogoutURLs
@@ -106,6 +107,7 @@ Resources:
       AttributeMapping:
         name: http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name
         email: http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress
+        groups: http://schemas.microsoft.com/ws/2008/06/identity/claims/groups
 
 Outputs:
   UserPoolDomain:
