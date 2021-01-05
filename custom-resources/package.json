@@ -10,7 +10,7 @@
     "deploy": "sls deploy --stage prod"
   },
   "dependencies": {
-    "axios": "^0.19.0",
+    "axios": "^0.21.1",
     "source-map-support": "^0.5.10"
   },
   "devDependencies": {
